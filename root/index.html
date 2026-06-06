@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Siddharth Patra — Capital One Job Match Analysis</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #14171f;
+    --surface2: #1c2030;
+    --accent: #4fffb0;
+    --accent2: #ff6b6b;
+    --accent3: #ffd166;
+    --text: #e8eaf0;
+    --muted: #7a8099;
+    --border: #252a38;
+    --high: #4fffb0;
+    --mid: #ffd166;
+    --low: #ff6b6b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    padding: 40px 24px;
+    min-height: 100vh;
+  }
+
+  header {
+    max-width: 1300px;
+    margin: 0 auto 48px;
+  }
+
+  header h1 {
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--accent);
+    line-height: 1.1;
+  }
+
+  header p {
+    margin-top: 10px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+  }
+
+  .legend {
+    display: flex;
+    gap: 20px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+
+  .dot.high { background: var(--high); }
+  .dot.mid  { background: var(--mid); }
+  .dot.low  { background: var(--low); }
+
+  .table-wrap {
+    max-width: 1300px;
+    margin: 0 auto;
+    overflow-x: auto;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.84rem;
+  }
+
+  thead tr {
+    background: var(--surface2);
+  }
+
+  thead th {
+    padding: 14px 16px;
+    text-align: left;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-transform: uppercase;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+  }
+
+  thead th:first-child { min-width: 220px; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface); }
+
+  td {
+    padding: 13px 16px;
+    vertical-align: middle;
+  }
+
+  td:first-child {
+    font-weight: 600;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    color: var(--text);
+  }
+
+  td:first-child a {
+    color: var(--text);
+    text-decoration: none;
+    display: block;
+  }
+
+  td:first-child a:hover { color: var(--accent); }
+
+  td:first-child span {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    font-weight: 400;
+    margin-top: 2px;
+    letter-spacing: 0.02em;
+  }
+
+  .score-cell {
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    font-size: 1rem;
+    white-space: nowrap;
+  }
+
+  .score-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    min-width: 42px;
+    text-align: center;
+  }
+
+  .score-high  { background: rgba(79,255,176,0.12); color: var(--high); }
+  .score-mid   { background: rgba(255,209,102,0.12); color: var(--mid); }
+  .score-low   { background: rgba(255,107,107,0.12); color: var(--low); }
+
+  /* remarks section */
+  .remarks-section {
+    max-width: 1300px;
+    margin: 56px auto 0;
+  }
+
+  .remarks-section h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+  }
+
+  .remark-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+    margin-bottom: 14px;
+  }
+
+  .remark-card h3 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 14px;
+    line-height: 1.4;
+  }
+
+  .remark-card h3 a {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .remark-card h3 a:hover { color: var(--accent); }
+
+  .remark-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .remark-metric {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  .remark-metric-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .remark-metric-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .remark-note {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.55;
+    border-left: 2px solid var(--border);
+    padding-left: 12px;
+    margin-top: 10px;
+  }
+
+  /* overall note box */
+  .note-box {
+    max-width: 1300px;
+    margin: 40px auto 0;
+    background: rgba(79,255,176,0.04);
+    border: 1px solid rgba(79,255,176,0.2);
+    border-radius: 10px;
+    padding: 20px 22px;
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .note-box strong { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Capital One Job Match Analysis<br>— Siddharth Patra</h1>
+  <p>Resume vs. 19 Capital One Data Science roles · Scores out of 10</p>
+  <div class="legend">
+    <div class="legend-item"><div class="dot high"></div>7–10 Strong</div>
+    <div class="legend-item"><div class="dot mid"></div>5–6 Moderate</div>
+    <div class="legend-item"><div class="dot low"></div>0–4 Weak</div>
+  </div>
+</header>
+
+<div class="table-wrap">
+<table>
+<thead>
+  <tr>
+    <th>#  Job Title</th>
+    <th>Tech Stack Match</th>
+    <th>Overall Match</th>
+    <th>Experience / Domain Fit</th>
+    <th>HR Round Chances</th>
+  </tr>
+</thead>
+<tbody>
+
+  <!-- 1 -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/mclean/principal-data-scientist-ai-foundations-specialist-models/1732/95135398240" target="_blank">1. Principal Data Scientist – AI Foundations, Specialist Models<span>Entity Resolution · Transformers · Graph ML</span></a></td>
+    <td class="score-cell"><span class="score-badge score-high">7</span></td>
+    <td class="score-cell"><span class="score-badge score-high">7</span></td>
+    <td class="score-cell"><span class="score-badge score-mid">6</span></td>
+    <td class="score-cell"><span class="score-badge score-high">7</span></td>
+  </tr>
+
+  <!-- 2 -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-us-card-generative-ai-systems/1732/92613833888" target="_blank">2. Principal Associate – US Card Generative AI Systems<span>NLP · GenAI · Time-series · Speech/Vision</span></a></td>
+    <td class="score-cell"><span class="score-badge score-high">7</span></td>
+    <td class="score-cell"><span class="score-badge score-high">7</span></td>
+    <td class="score-cell"><span class="score-badge score-mid">6</span></td>
+    <td class="score-cell"><span class="score-badge score-high">7</span></td>
+  </tr>
+
+  <!-- 3 -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-frontier-ai-in-customer-protection/1732/93500259840" target="_blank">3. Principal Associate – Frontier AI in Customer Protection<span>Graph ML · Knowledge Graphs · Fraud · NeptuneDB</span></a></td>
+    <td class="score-cell"><span class="score-badge score-high">8</span></td>
+    <td class="score-cell"><span class="score-badge score-high">8</span></td>
+    <td class="score-cell"><span class="score-badge score-high">8</span></td>
+    <td class="score-cell"><span class="score-badge score-high">8</span></td>
+  </tr>
+
+  <!-- 4 -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/mclean/principal-data-scientist/1732/90419085696" target="_blank">4. Principal Data Scientist – Business Card & Payments<span>Credit Underwriting · Python · AWS · H2O · Spark</span></a></td>
+    <td class="score-cell"><span class="score-badge score-mid">6</span></td>
+    <td class="score-cell"><span class="score-badge score-mid">5</span></td>
+    <td class="score-cell"><span class="score-badge score-low">3</span></td>
+    <td class="score-cell"><span class="score-badge score-mid">5</span></td>
+  </tr>
+
+  <!-- 5 -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/mclean/principal-data-scientist/1732/93462629792" target="_blank">5. Principal Data Scientist – Mainstreet Customer Mgmt<span>Customer Lifecycle · Python · AWS · Spark</span></a></td>
+    <td class="score-cell"><span class="score-badge score-mid">6</span></td>
+    <td class="score-cell"><span class="score-badge score-mid">5</span></td>
+    <td class="score-cell"><span class="score-badge score-low">3</span></td>
+    <td class="score-cell"><span class="score-badge score-mid">5</span></td>
+  </tr>
+
+  <!-- 6 -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-people-strategy-and-analytics/1732/93806318608" target="_blank">6. Principal Associate – People Strategy & Analytics<span>NLP · LLMs · RAG · HuggingFace · VectorDBs</span></a></td>
+    <td class="score-cell"><span class="score-badge score-high">9</span></td>
+    <td class="score-cell"><span class="score-badge score-high">8</span></td>
+    <td class="score-cell"><span class="score-badge score-high">8</span></td>
+    <td class="score-cell"><span class="score-badge score-high">8</span></td>
+  </tr>
+
+  <!-- 7 -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-anti-money-laundering/1732/92972682944" target="_blank">7. Principal Associate – Anti-Money Laundering<span>LLMs · RAG · Agentic AI · AWS · Python</span></a></td>
+    <td class="score-cell"><span class="score-badge score-high">8</span></td>
+    <td class="score-cell"><span class="score-badge score-high">8</span></td>
+    <td class="score-cell"><span class="score-badge score-high">7</span></td>
+    <td class="score-cell"><span class="score-badge score-high">8</span></td>
+  </tr>
+
+  <!-- 8 -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-science-ai-foundations/1732/94070053376" target="_blank">8. Principal Associate – AI Foundations (GenAI Digital Asst.)<span>LLMs · LangChain · LangGraph · HuggingFace · vLLM</span></a></td>
+    <td class="score-cell"><span class="score-badge score-high">9</span></td>
+    <td class="score-cell"><span class="score-badge score-high">9</span></td>
+    <td class="score-cell"><span class="score-badge score-high">8</span></td>
+    <td class="score-cell"><span class="score-badge score-high">9</span></td>
+  </tr>
+
+  <!-- 9 -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/mclean/principal-data-scientist-banking-payments/1732/87867809392" target="_blank">9. Principal Data Scientist – Banking Payments<span>Agentic AI · LLMs · NLP · Anomaly Detection · Python</span></a></td>
+    <td class="score-cell"><span class="score-badge score-high">8</span></td>
+    <td class="score-cell"><span class="score-badge score-high">7</span></td>
+    <td class="score-cell"><span class="score-badge score-high">7</span></td>
+    <td class="score-cell"><span class="score-badge score-high">7</span></td>
+  </tr>
+
+  <!-- 10 -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-retail-bank/1732/95021173328" target="_blank">10. Principal Associate – Retail Bank (Bank Ops DS)<span>Time-series · Forecasting · Python · AWS</span></a></td>
+    <td class="score-cell"><span class="score-badge score-mid">6</span></td>
+    <td class="score-cell"><span class="score-badge score-mid">5</span></td>
+    <td class="score-cell"><span class="score-badge score-low">4</span></td>
+    <td class="score-cell"><span class="score-badge score-mid">5</span></td>
+  </tr>
+
+  <!-- 11 -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-mainstreet-acquisitions/1732/93535934416" target="_blank">11. Principal Associate – Mainstreet Acquisitions<span>Credit Risk · ML · Python · H2O · Spark</span></a></td>
+    <td class="score-cell"><span class="score-badge score-mid">5</span></td>
+    <td class="score-cell"><span class="score-badge score-low">4</span></td>
+    <td class="score-cell"><span class="score-badge score-low">2</span></td>
+    <td class="score-cell"><span class="score-badge score-low">4</span></td>
+  </tr>
+
+  <!-- 12 -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-cash-flow-underwriting/1732/92744506800" target="_blank">12. Principal Associate – Cash Flow Underwriting<span>ML · Feature Engineering · Python · AWS</span></a></td>
+    <td class="score-cell"><span class="score-badge score-mid">5</span></td>
+    <td class="score-cell"><span class="score-badge score-low">4</span></td>
+    <td class="score-cell"><span class="score-badge score-low">2</span></td>
+    <td class="score-cell"><span class="score-badge score-low">4</span></td>
+  </tr>
+
+  <!-- 13 -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-model-risk-office/1732/94478946160" target="_blank">13. Principal Associate – Model Risk Office<span>ML Model Validation · PySpark · AWS · Kubeflow</span></a></td>
+    <td class="score-cell"><span class="score-badge score-mid">6</span></td>
+    <td class="score-cell"><span class="score-badge score-mid">5</span></td>
+    <td class="score-cell"><span class="score-badge score-low">4</span></td>
+    <td class="score-cell"><span class="score-badge score-mid">5</span></td>
+  </tr>
+
+  <!-- 14 -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-us-card-marketing-intelligence/1732/94449706608" target="_blank">14. Principal Associate – US Card Marketing Intelligence<span>ML · Python · AWS · H2O · Spark</span></a></td>
+    <td class="score-cell"><span class="score-badge score-mid">5</span></td>
+    <td class="score-cell"><span class="score-badge score-low">4</span></td>
+    <td class="score-cell"><span class="score-badge score-low">3</span></td>
+    <td class="score-cell"><span class="score-badge score-low">4</span></td>
+  </tr>
+
+  <!-- 15 -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/riverwoods/principal-associate-data-scientist-us-card-dfs-acquisitions/1732/94221962992" target="_blank">15. Principal Associate – US Card DFS Acquisitions<span>Credit Underwriting · ML · Python · H2O</span></a></td>
+    <td class="score-cell"><span class="score-badge score-mid">5</span></td>
+    <td class="score-cell"><span class="score-badge score-low">4</span></td>
+    <td class="score-cell"><span class="score-badge score-low">2</span></td>
+    <td class="score-cell"><span class="score-badge score-low">4</span></td>
+  </tr>
+
+  <!-- 16 -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-retail-bank-valuations-data-science/1732/95135398480" target="_blank">16. Principal Associate – Retail Bank Valuations DS<span>Embeddings · Sequence Models · XGBoost · Python</span></a></td>
+    <td class="score-cell"><span class="score-badge score-mid">6</span></td>
+    <td class="score-cell"><span class="score-badge score-mid">5</span></td>
+    <td class="score-cell"><span class="score-badge score-low">4</span></td>
+    <td class="score-cell"><span class="score-badge score-mid">5</span></td>
+  </tr>
+
+  <!-- 17 -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/new-york/principal-associate-data-science-us-card-fraud-authentication-team/1732/94298044688" target="_blank">17. Principal Associate – US Card Fraud Authentication<span>ML · Spark · AWS · H2O · Fraud Detection</span></a></td>
+    <td class="score-cell"><span class="score-badge score-mid">6</span></td>
+    <td class="score-cell"><span class="score-badge score-mid">6</span></td>
+    <td class="score-cell"><span class="score-badge score-mid">5</span></td>
+    <td class="score-cell"><span class="score-badge score-mid">6</span></td>
+  </tr>
+
+  <!-- 18 (duplicate of 7) -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-anti-money-laundering/1732/92972682944" target="_blank">18. Principal Associate – Anti-Money Laundering (duplicate link)<span>Same as #7 above</span></a></td>
+    <td class="score-cell"><span class="score-badge score-high">8</span></td>
+    <td class="score-cell"><span class="score-badge score-high">8</span></td>
+    <td class="score-cell"><span class="score-badge score-high">7</span></td>
+    <td class="score-cell"><span class="score-badge score-high">8</span></td>
+  </tr>
+
+  <!-- 19 -->
+  <tr>
+    <td><a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-retail-bank-marketing/1732/95091806928" target="_blank">19. Principal Associate – Retail Bank Marketing<span>Embeddings · Sequence Models · Python · ML Pipelines</span></a></td>
+    <td class="score-cell"><span class="score-badge score-mid">5</span></td>
+    <td class="score-cell"><span class="score-badge score-low">4</span></td>
+    <td class="score-cell"><span class="score-badge score-low">3</span></td>
+    <td class="score-cell"><span class="score-badge score-low">4</span></td>
+  </tr>
+
+</tbody>
+</table>
+</div>
+
+
+<!-- REMARKS -->
+<div class="remarks-section">
+  <h2>Score Justifications</h2>
+
+  <!-- 1 -->
+  <div class="remark-card">
+    <h3>1. <a href="https://www.capitalonecareers.com/job/mclean/principal-data-scientist-ai-foundations-specialist-models/1732/95135398240" target="_blank">Principal Data Scientist – AI Foundations, Specialist Models</a></h3>
+    <div class="remark-grid">
+      <div class="remark-metric"><div class="remark-metric-label">Tech Stack</div><div class="remark-metric-value" style="color:var(--high)">7/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Overall Match</div><div class="remark-metric-value" style="color:var(--high)">7/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Domain Fit</div><div class="remark-metric-value" style="color:var(--mid)">6/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">HR Chances</div><div class="remark-metric-value" style="color:var(--high)">7/10</div></div>
+    </div>
+    <div class="remark-note"><strong>Tech:</strong> Python, AWS, Spark match directly; they want transformers and graph ML — your TREX GraphRAG project is directly relevant. Missing H2O experience they use. <strong>Domain:</strong> Entity resolution is specialized; your GraphRAG work is close but not identical. <strong>HR:</strong> Strong UIUC MCS + graph ML project should clear the resume screen at this level.</div>
+  </div>
+
+  <!-- 2 -->
+  <div class="remark-card">
+    <h3>2. <a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-us-card-generative-ai-systems/1732/92613833888" target="_blank">Principal Associate – US Card Generative AI Systems</a></h3>
+    <div class="remark-grid">
+      <div class="remark-metric"><div class="remark-metric-label">Tech Stack</div><div class="remark-metric-value" style="color:var(--high)">7/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Overall Match</div><div class="remark-metric-value" style="color:var(--high)">7/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Domain Fit</div><div class="remark-metric-value" style="color:var(--mid)">6/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">HR Chances</div><div class="remark-metric-value" style="color:var(--high)">7/10</div></div>
+    </div>
+    <div class="remark-note"><strong>Tech:</strong> Python, AWS, Spark match; GenAI/NLP/deep learning line up with your TF/PyTorch/LangChain stack. They mention H2O and Conda which you don't explicitly list. <strong>Domain:</strong> NLP/NER work at J&J and GraphRAG projects align, but no direct speech or CV experience. <strong>HR:</strong> The GenAI angle is strong for your profile, solid shot.</div>
+  </div>
+
+  <!-- 3 -->
+  <div class="remark-card">
+    <h3>3. <a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-frontier-ai-in-customer-protection/1732/93500259840" target="_blank">Principal Associate – Frontier AI in Customer Protection ⭐ TOP PICK</a></h3>
+    <div class="remark-grid">
+      <div class="remark-metric"><div class="remark-metric-label">Tech Stack</div><div class="remark-metric-value" style="color:var(--high)">8/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Overall Match</div><div class="remark-metric-value" style="color:var(--high)">8/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Domain Fit</div><div class="remark-metric-value" style="color:var(--high)">8/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">HR Chances</div><div class="remark-metric-value" style="color:var(--high)">8/10</div></div>
+    </div>
+    <div class="remark-note"><strong>Tech:</strong> Knowledge graphs, graph databases — your TREX project built a GraphRAG system with entity graph and multi-hop reasoning, a near-perfect match. AWS and Python covered. <strong>Domain:</strong> You built the exact type of thing this team does: knowledge graphs over unstructured documents. <strong>HR:</strong> The project experience is a direct mirror of the JD; very strong screening candidate.</div>
+  </div>
+
+  <!-- 4 -->
+  <div class="remark-card">
+    <h3>4. <a href="https://www.capitalonecareers.com/job/mclean/principal-data-scientist/1732/90419085696" target="_blank">Principal Data Scientist – Business Card & Payments</a></h3>
+    <div class="remark-grid">
+      <div class="remark-metric"><div class="remark-metric-label">Tech Stack</div><div class="remark-metric-value" style="color:var(--mid)">6/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Overall Match</div><div class="remark-metric-value" style="color:var(--mid)">5/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Domain Fit</div><div class="remark-metric-value" style="color:var(--low)">3/10</div></div>
+      <td class="score-cell"><span class="score-badge score-mid">5/10</span></td>
+    </div>
+    <div class="remark-note"><strong>Tech:</strong> Python/AWS match; no H2O or credit-model stack on resume. <strong>Domain:</strong> Zero credit underwriting experience; this team does full-spectrum credit models which is a completely different domain from your work. <strong>HR:</strong> Generic enough JD that Python/ML experience may pass, but domain gap hurts.</div>
+  </div>
+
+  <!-- 5 -->
+  <div class="remark-card">
+    <h3>5. <a href="https://www.capitalonecareers.com/job/mclean/principal-data-scientist/1732/93462629792" target="_blank">Principal Data Scientist – Mainstreet Customer Management</a></h3>
+    <div class="remark-grid">
+      <div class="remark-metric"><div class="remark-metric-label">Tech Stack</div><div class="remark-metric-value" style="color:var(--mid)">6/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Overall Match</div><div class="remark-metric-value" style="color:var(--mid)">5/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Domain Fit</div><div class="remark-metric-value" style="color:var(--low)">3/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">HR Chances</div><div class="remark-metric-value" style="color:var(--mid)">5/10</div></div>
+    </div>
+    <div class="remark-note"><strong>Tech:</strong> Same generic Python/ML/AWS stack — acceptable. <strong>Domain:</strong> Customer management/retention modeling isn't aligned with your AI/ML engineering work. <strong>HR:</strong> JD is generic enough to pass screening, but weak domain story.</div>
+  </div>
+
+  <!-- 6 -->
+  <div class="remark-card">
+    <h3>6. <a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-people-strategy-and-analytics/1732/93806318608" target="_blank">Principal Associate – People Strategy & Analytics ⭐ TOP PICK</a></h3>
+    <div class="remark-grid">
+      <div class="remark-metric"><div class="remark-metric-label">Tech Stack</div><div class="remark-metric-value" style="color:var(--high)">9/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Overall Match</div><div class="remark-metric-value" style="color:var(--high)">8/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Domain Fit</div><div class="remark-metric-value" style="color:var(--high)">8/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">HR Chances</div><div class="remark-metric-value" style="color:var(--high)">8/10</div></div>
+    </div>
+    <div class="remark-note"><strong>Tech:</strong> Literally names Python, LangChain, HuggingFace Transformers, VectorDBs, PyTorch/TensorFlow, AWS — your resume hits almost every single one. <strong>Domain:</strong> NER at J&J + RAG/LLM work in projects is a near-perfect match for what this team builds. <strong>HR:</strong> One of your strongest resume-to-JD alignments; high likelihood of passing the screen.</div>
+  </div>
+
+  <!-- 7 -->
+  <div class="remark-card">
+    <h3>7 & 18. <a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-anti-money-laundering/1732/92972682944" target="_blank">Principal Associate – Anti-Money Laundering ⭐ TOP PICK</a></h3>
+    <div class="remark-grid">
+      <div class="remark-metric"><div class="remark-metric-label">Tech Stack</div><div class="remark-metric-value" style="color:var(--high)">8/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Overall Match</div><div class="remark-metric-value" style="color:var(--high)">8/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Domain Fit</div><div class="remark-metric-value" style="color:var(--high)">7/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">HR Chances</div><div class="remark-metric-value" style="color:var(--high)">8/10</div></div>
+    </div>
+    <div class="remark-note"><strong>Tech:</strong> Preferred quals list GenAI, Agentic AI, LLMs, vector databases, RAG, LangGraph — you have all of these. <strong>Domain:</strong> No AML experience, but the preferred 1yr GenAI/Agentic system requirement is squarely in your wheelhouse via World Bank and projects. <strong>HR:</strong> The GenAI preferred stack match is exceptional; the domain gap (AML) is preferred not required.</div>
+  </div>
+
+  <!-- 8 -->
+  <div class="remark-card">
+    <h3>8. <a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-science-ai-foundations/1732/94070053376" target="_blank">Principal Associate – AI Foundations (GenAI Digital Assistant) ⭐ BEST MATCH</a></h3>
+    <div class="remark-grid">
+      <div class="remark-metric"><div class="remark-metric-label">Tech Stack</div><div class="remark-metric-value" style="color:var(--high)">9/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Overall Match</div><div class="remark-metric-value" style="color:var(--high)">9/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Domain Fit</div><div class="remark-metric-value" style="color:var(--high)">8/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">HR Chances</div><div class="remark-metric-value" style="color:var(--high)">9/10</div></div>
+    </div>
+    <div class="remark-note"><strong>Tech:</strong> The JD explicitly calls out Python, AWS, LangChain, LangGraph, HuggingFace Transformers, vLLM, VectorDBs — you have all of these on your resume. <strong>Domain:</strong> KnowledgeCore project (self-learning AI brain), TREX GraphRAG, and World Bank MCP work directly mirror what this team builds. <strong>HR:</strong> This is your best overall match — the tech stack and project experience are tailor-made.</div>
+  </div>
+
+  <!-- 9 -->
+  <div class="remark-card">
+    <h3>9. <a href="https://www.capitalonecareers.com/job/mclean/principal-data-scientist-banking-payments/1732/87867809392" target="_blank">Principal Data Scientist – Banking Payments</a></h3>
+    <div class="remark-grid">
+      <div class="remark-metric"><div class="remark-metric-label">Tech Stack</div><div class="remark-metric-value" style="color:var(--high)">8/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Overall Match</div><div class="remark-metric-value" style="color:var(--high)">7/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Domain Fit</div><div class="remark-metric-value" style="color:var(--high)">7/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">HR Chances</div><div class="remark-metric-value" style="color:var(--high)">7/10</div></div>
+    </div>
+    <div class="remark-note"><strong>Tech:</strong> Calls for NLP, LLMs, transformer architectures, agentic processes — all in your resume. Prefers someone who built an agentic system: your KnowledgeCore and World Bank MCP work qualifies. <strong>Domain:</strong> No payments domain experience, but the agentic/ML engineering angle is strong. <strong>HR:</strong> The agentic system requirement is a bonus differentiator from your resume.</div>
+  </div>
+
+  <!-- 10 -->
+  <div class="remark-card">
+    <h3>10. <a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-retail-bank/1732/95021173328" target="_blank">Principal Associate – Retail Bank (Bank Ops DS)</a></h3>
+    <div class="remark-grid">
+      <div class="remark-metric"><div class="remark-metric-label">Tech Stack</div><div class="remark-metric-value" style="color:var(--mid)">6/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Overall Match</div><div class="remark-metric-value" style="color:var(--mid)">5/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Domain Fit</div><div class="remark-metric-value" style="color:var(--low)">4/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">HR Chances</div><div class="remark-metric-value" style="color:var(--mid)">5/10</div></div>
+    </div>
+    <div class="remark-note"><strong>Tech:</strong> Python/ML match; time-series forecasting and optimization are not prominent in your resume. <strong>Domain:</strong> Cash forecasting and bank operations are quite different from your AI-first background. <strong>HR:</strong> Generic requirements make screening passable but weak story overall.</div>
+  </div>
+
+  <!-- 11 -->
+  <div class="remark-card">
+    <h3>11. <a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-mainstreet-acquisitions/1732/93535934416" target="_blank">Principal Associate – Mainstreet Acquisitions</a></h3>
+    <div class="remark-grid">
+      <div class="remark-metric"><div class="remark-metric-label">Tech Stack</div><div class="remark-metric-value" style="color:var(--mid)">5/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Overall Match</div><div class="remark-metric-value" style="color:var(--low)">4/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Domain Fit</div><div class="remark-metric-value" style="color:var(--low)">2/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">HR Chances</div><div class="remark-metric-value" style="color:var(--low)">4/10</div></div>
+    </div>
+    <div class="remark-note"><strong>Tech:</strong> General Python/ML overlap; preferred quals specifically ask for 3yrs credit risk and financial services — zero alignment. <strong>Domain:</strong> Heavily credit/fintech domain-specific. <strong>HR:</strong> The domain gaps are red flags at screening.</div>
+  </div>
+
+  <!-- 12 -->
+  <div class="remark-card">
+    <h3>12. <a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-cash-flow-underwriting/1732/92744506800" target="_blank">Principal Associate – Cash Flow Underwriting</a></h3>
+    <div class="remark-grid">
+      <div class="remark-metric"><div class="remark-metric-label">Tech Stack</div><div class="remark-metric-value" style="color:var(--mid)">5/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Overall Match</div><div class="remark-metric-value" style="color:var(--low)">4/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Domain Fit</div><div class="remark-metric-value" style="color:var(--low)">2/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">HR Chances</div><div class="remark-metric-value" style="color:var(--low)">4/10</div></div>
+    </div>
+    <div class="remark-note"><strong>Tech:</strong> Python/AWS overlap only; cash flow and transaction data feature engineering is niche. <strong>Domain:</strong> This team focuses on creditworthiness prediction — no experience here. <strong>HR:</strong> Unlikely to clear without domain-specific background.</div>
+  </div>
+
+  <!-- 13 -->
+  <div class="remark-card">
+    <h3>13. <a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-model-risk-office/1732/94478946160" target="_blank">Principal Associate – Model Risk Office</a></h3>
+    <div class="remark-grid">
+      <div class="remark-metric"><div class="remark-metric-label">Tech Stack</div><div class="remark-metric-value" style="color:var(--mid)">6/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Overall Match</div><div class="remark-metric-value" style="color:var(--mid)">5/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Domain Fit</div><div class="remark-metric-value" style="color:var(--low)">4/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">HR Chances</div><div class="remark-metric-value" style="color:var(--mid)">5/10</div></div>
+    </div>
+    <div class="remark-note"><strong>Tech:</strong> Python/Spark match; Kubeflow/model deployment pipeline experience not shown. <strong>Domain:</strong> Model validation and risk oversight is a governance role not aligned to your engineering/research profile. <strong>HR:</strong> Border case; ML model lifecycle experience may be enough to screen through.</div>
+  </div>
+
+  <!-- 14 -->
+  <div class="remark-card">
+    <h3>14. <a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-us-card-marketing-intelligence/1732/94449706608" target="_blank">Principal Associate – US Card Marketing Intelligence</a></h3>
+    <div class="remark-grid">
+      <div class="remark-metric"><div class="remark-metric-label">Tech Stack</div><div class="remark-metric-value" style="color:var(--mid)">5/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Overall Match</div><div class="remark-metric-value" style="color:var(--low)">4/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Domain Fit</div><div class="remark-metric-value" style="color:var(--low)">3/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">HR Chances</div><div class="remark-metric-value" style="color:var(--low)">4/10</div></div>
+    </div>
+    <div class="remark-note"><strong>Tech:</strong> Python/ML overlap only; marketing DS needs H2O, Spark, and channel optimization tooling. <strong>Domain:</strong> Marketing optimization is unrelated to your AI/ML engineering focus. <strong>HR:</strong> Weak match; generic Python/ML won't differentiate here.</div>
+  </div>
+
+  <!-- 15 -->
+  <div class="remark-card">
+    <h3>15. <a href="https://www.capitalonecareers.com/job/riverwoods/principal-associate-data-scientist-us-card-dfs-acquisitions/1732/94221962992" target="_blank">Principal Associate – US Card DFS Acquisitions</a></h3>
+    <div class="remark-grid">
+      <div class="remark-metric"><div class="remark-metric-label">Tech Stack</div><div class="remark-metric-value" style="color:var(--mid)">5/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Overall Match</div><div class="remark-metric-value" style="color:var(--low)">4/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Domain Fit</div><div class="remark-metric-value" style="color:var(--low)">2/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">HR Chances</div><div class="remark-metric-value" style="color:var(--low)">4/10</div></div>
+    </div>
+    <div class="remark-note"><strong>Tech:</strong> Broad Python/ML overlap; credit acquisition tooling not in your stack. <strong>Domain:</strong> Pure credit/underwriting domain with Discover integration context — zero experience match. <strong>HR:</strong> Primary location is Riverwoods, IL; domain mismatch further lowers odds.</div>
+  </div>
+
+  <!-- 16 -->
+  <div class="remark-card">
+    <h3>16. <a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-retail-bank-valuations-data-science/1732/95135398480" target="_blank">Principal Associate – Retail Bank Valuations DS</a></h3>
+    <div class="remark-grid">
+      <div class="remark-metric"><div class="remark-metric-label">Tech Stack</div><div class="remark-metric-value" style="color:var(--mid)">6/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Overall Match</div><div class="remark-metric-value" style="color:var(--mid)">5/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Domain Fit</div><div class="remark-metric-value" style="color:var(--low)">4/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">HR Chances</div><div class="remark-metric-value" style="color:var(--mid)">5/10</div></div>
+    </div>
+    <div class="remark-note"><strong>Tech:</strong> Mentions embeddings and sequence models — your deep learning background covers this. XGBoost not prominent in resume. <strong>Domain:</strong> Customer valuation/marketing models don't align with your AI systems work. <strong>HR:</strong> Passable if you frame embedding/DL work prominently.</div>
+  </div>
+
+  <!-- 17 -->
+  <div class="remark-card">
+    <h3>17. <a href="https://www.capitalonecareers.com/job/new-york/principal-associate-data-science-us-card-fraud-authentication-team/1732/94298044688" target="_blank">Principal Associate – US Card Fraud Authentication</a></h3>
+    <div class="remark-grid">
+      <div class="remark-metric"><div class="remark-metric-label">Tech Stack</div><div class="remark-metric-value" style="color:var(--mid)">6/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Overall Match</div><div class="remark-metric-value" style="color:var(--mid)">6/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Domain Fit</div><div class="remark-metric-value" style="color:var(--mid)">5/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">HR Chances</div><div class="remark-metric-value" style="color:var(--mid)">6/10</div></div>
+    </div>
+    <div class="remark-note"><strong>Tech:</strong> Python, AWS, Spark match; your fraud detection GCP MLOps project is relevant. <strong>Domain:</strong> Your fraud detection project is an exact domain hit, though it was academic/GCP-based rather than production. <strong>HR:</strong> One of the stronger screening stories among the weaker group — the fraud detection project gives you a concrete narrative.</div>
+  </div>
+
+  <!-- 19 -->
+  <div class="remark-card">
+    <h3>19. <a href="https://www.capitalonecareers.com/job/mclean/principal-associate-data-scientist-retail-bank-marketing/1732/95091806928" target="_blank">Principal Associate – Retail Bank Marketing</a></h3>
+    <div class="remark-grid">
+      <div class="remark-metric"><div class="remark-metric-label">Tech Stack</div><div class="remark-metric-value" style="color:var(--mid)">5/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Overall Match</div><div class="remark-metric-value" style="color:var(--low)">4/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">Domain Fit</div><div class="remark-metric-value" style="color:var(--low)">3/10</div></div>
+      <div class="remark-metric"><div class="remark-metric-label">HR Chances</div><div class="remark-metric-value" style="color:var(--low)">4/10</div></div>
+    </div>
+    <div class="remark-note"><strong>Tech:</strong> Python/ML pipelines match; embedding/sequence models touched in your background. Focused on marketing spend optimization — not your domain. <strong>Domain:</strong> Marketing efficiency models require channel/media mix domain knowledge you don't have. <strong>HR:</strong> Low priority — identical profile to #14 with same weaknesses.</div>
+  </div>
+
+</div>
+
+<!-- OVERALL NOTE -->
+<div class="note-box">
+  <strong>Overall assessment:</strong> Your resume is strongly positioned for <strong>GenAI/LLM-heavy and graph/RAG-focused roles</strong>. Jobs #3, #6, #7/18, and especially <strong>#8</strong> are your best bets — the tech stack is almost a line-by-line match. The credit/underwriting/marketing/banking-ops roles (#4, #5, #11, #12, #14, #15, #19) are weak fits because they require domain-specific financial modeling experience that isn't in your profile. Your Python + LangChain + AWS + RAG/Agentic work is a genuine differentiator for the AI-forward roles.
+  <br><br>
+  <strong>Note:</strong> Links #7 and #18 in your original list point to the same job posting.
+</div>
+
+</body>
+</html>
